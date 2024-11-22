@@ -44,6 +44,7 @@ app.get('/logout',(req,res)=>{
     res.clearCookie('uid');
     res.status(200).send('User logged out successfully');
 });
+
 connectDB();
 
 app.listen(process.env.PORT || 8000,()=>{

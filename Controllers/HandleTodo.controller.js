@@ -22,7 +22,7 @@ const getTodo= async(req,res)=>{
     const userid='672f605223a07b4d38cd1de1';
     const user= await User.findOne({_id:userid});
     if(!user){
-        res.status(404).send('User not found ')
+        res.status(202).send('User not found ')
     }
     else{
         try { 
