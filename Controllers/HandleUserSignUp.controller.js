@@ -10,11 +10,6 @@ async function HandleUserSignUp(req,res){
             password,
             admin
         })
-        res.cookie('user', user, {
-            httpOnly: true,
-            secure: true
-        });
-        console.log("Successful Signup");
         res.status(200).send("Welcome Aboard Sir");
         
     } catch (error) {
@@ -28,16 +23,19 @@ async function HandleUserLogin(req,res){
     const {email,password,admin,year}=req.body
     try {
         const LoggedinUser=await User.find({email,password,admin,year}).select('_id admin');
-        if(!LoggedinUser){
-            res.status(202).send('Signup needed');
+        if(LoggedinUser?.length===0){
+            return res.status(202).send('User not found');
         }
         else
         {
-            const isidpresent= LoggedinUser[0].id?true:false;
-            return res.status(200).send({admin:LoggedinUser[0].admin,user:isidpresent});
+            const isidpresent= LoggedinUser[0].id ?true:false;
+            if(isidpresent){
+                return res.status(200).send({admin:LoggedinUser[0].admin,sessionID:true,user:LoggedinUser[0]._id});
+            }
         }
     } catch (error) {
-        res.status(223).send('Internal login error');
+        console.log("An error occured",error);
+        res.status(223).send('Internal Error Occured');
     } 
 }
 
