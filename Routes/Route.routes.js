@@ -3,8 +3,6 @@ const Route= express.Router();
 
 Route.get('/',(req,res)=>{
     const uid= req.cookies?.uid;
-    // console.log(uid);
-    
     if(uid){
         res.status(201).send(true);
     }else{

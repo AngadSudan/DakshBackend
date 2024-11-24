@@ -1,5 +1,5 @@
 const {User}=require('../models/User.models')
-const {v4: uuidv4}= require('uuid')
+
 async function HandleUserSignUp(req,res){
     const {rollnumber,email,year,password,admin}=req.body;
     try {
@@ -27,25 +27,17 @@ async function HandleUserSignUp(req,res){
 async function HandleUserLogin(req,res){
     const {email,password,admin,year}=req.body
     try {
-        const LoggedinUser=await User.findOne({email,password,admin,year});
-        const sessionId=uuidv4();
-        
+        const LoggedinUser=await User.find({email,password,admin,year}).select('_id admin');
         if(!LoggedinUser){
-            res.status(404).send('User not found');
+            res.status(202).send('Signup needed');
         }
         else
         {
-            // setUser(sessionId,LoggedinUser);
-            const cookiedata= res.cookie('uid',sessionId,{
-                httpOnly:true,
-                secure: true,
-            });
-            console.log("cookie generated");
-            return res.status(200).send({success : true, token:cookiedata});
-            console.log("check3");
+            const isidpresent= LoggedinUser[0].id?true:false;
+            return res.status(200).send({admin:LoggedinUser[0].admin,user:isidpresent});
         }
     } catch (error) {
-        res.status(404).send('User not found');
+        res.status(223).send('Internal login error');
     } 
 }
 
