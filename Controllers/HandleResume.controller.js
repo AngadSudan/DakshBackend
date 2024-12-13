@@ -1,48 +1,29 @@
 const dotenv = require('dotenv');
 dotenv.config();
-// const {Configuration, openAIApi}= require('openai')
-// const config= new Configuration({
-//     apiKey: process.env.VITE_OPENAI_API_KEY,
-// })
-// const openai= new openAIApi(config);
-const OpenAi= require('openai');
-const ResumeScore= async (req, res) => {
-    // const { resumeText, jobDescription } = req.body
-    // try {
-    //   const response = await openaiApi.createChatCompletion({
-    //     model: "gpt-4", 
-    //     messages: [
-    //       {
-    //         role: "system",
-    //         content: "You are an ATS analyzer. Score resumes based on how well they match the given job description.",
-    //       },
-    //       {
-    //         role: "user",
-    //         content: `Job Description: ${jobDescription}\nResume: ${resumeText}\nGive an ATS score out of 100 based on the relevance.`,
-    //       },
-    //     ],
-    //   })
-    //   const atsScore = response.data.choices[0].message.content;
+const {GoogleGenerativeAI} = require('@google/generative-ai');
+const genAI= new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+const fs= require('fs');
+const pdf= require('pdf-parse');
+const model= genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    //   res.status(200).json({ score: atsScore });
-    // } catch (error) {
-    //   console.error(error);
-    //   res.status(500).json({ error: 'Failed to score resume' });
-    // }
-    const openai = new OpenAi({ apiKey: process.env.VITE_OPENAI_API_KEY });
+const ResumeScore= async (req, res) => {
     try {
-        const completion = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo",  
-            messages: [
-                { "role": "user", "content": "Provide me with a short philosophical joke" }
-            ],
-            max_tokens: 30
-        });
-        res.status(200).send(completion);
+        const filepath= req.file.path;
+        if(!filepath) return res.status(244).send('No file uploaded');
+        
+        const data= fs.readFileSync(filepath);
+        const resume= await pdf(data).then((data)=>{ return data.text });
+        
+        const prompt='Scan this resume data and return me an ATS Score based on the contents. Keep the checking tight and strict. Here is the data' + resume + 'The response must only be a json consisting of 2 fields. score and message. Score must the ATS Score out of 100 and the message must be an array consiting of how you can increase the score. Keep the number of improvements to atmax 3 at the time. Also check if the data is not a resume data, then set the score to 0 abd the message to a list containing the error message. The error message must be "The data provided is not a resume data. Please provide a valid resume data. in the response text, make sure to use only single quoteations or double quotations, dont use both.';
+
+        
+        const result= await model.generateContent(prompt);
+        const output= result.response.text();
+        res.status(244).send(output.substring(8, output.length-4));    
     } catch (error) {
         console.log(error);
-        setTimeout(()=>{},2000)
-        res.status(500).send('error in the model token usage');
+        
+        res.status(244).send('Error inside the function');   
     }
 }
 
